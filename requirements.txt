@@ -1,0 +1,4 @@
+openai>=1.47.1
+tqdm>=4.66.5
+numpy>=2.1.1
+pandas>=2.2.3
