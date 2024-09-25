@@ -14,7 +14,7 @@
             "python": "${workspaceFolder}/.venv/bin/python3",
             "args": [
                 "--max-lines",
-                "3"
+                "10"
             ],
             "envFile": "${workspaceFolder}/private.env"
         }
