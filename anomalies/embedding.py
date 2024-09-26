@@ -14,9 +14,11 @@ class EmbeddingRequester(object):
 
     @staticmethod
     def create(model: str = "text-embedding-3-large"):
-        return EmbeddingRequester(OpenAI(), model)
+        return EmbeddingRequester(OpenAI(timeout=60, max_retries=3), model)
 
     def generate_embeddings(self, text: str):
+        if text is None or not isinstance(text, str) or text.strip() == "":
+            return []
         response = self.client.embeddings.create(model=self.model, input=text)
         self.tokens += response.usage.prompt_tokens
         return response.data[0].embedding
@@ -25,9 +27,13 @@ class EmbeddingRequester(object):
         self, df: pd.DataFrame, from_column: str = "text", to_column: str = "embedding"
     ):
         total = len(df)
-        embeddings = []
-        for _, row in tqdm(df.iterrows(), total=total):
-            embeddings.append(self.generate_embeddings(row[from_column]))
+        embeddings = [None] * total
+        for i, row in tqdm(df.iterrows(), total=total):
+            try:
+                embeddings[i] = self.generate_embeddings(row[from_column])
+            except Exception as e:
+                print(f"Error: {e}")
+                embeddings[i] = "Error: {e}"
         new_df = df.copy()
         new_df[to_column] = embeddings
         return new_df
