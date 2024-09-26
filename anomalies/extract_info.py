@@ -74,11 +74,37 @@ def extract_text_equivs(root, namespace):
     
     return ' '.join(text_equivs)
 
+def extract_metadata_status(root, namespace):
+    """
+    Extracts the metadata status from a parsed XML root.
+    
+    Args:
+        root (xml.etree.ElementTree.Element): Root of the parsed XML tree.
+        namespace (str): Namespace URI to use in the XPath queries.
+    
+    Returns:
+        str: Extracted metadata status.
+    """
+    if root is None or not namespace:
+        return ""
+    
+    ns = {'ns': namespace}  # Namespace dict for searching
+
+    metadata = root.find('.//ns:TranskribusMetadata', ns)
+    status = metadata.get('status')
+    if status is not None:
+        return status
+        
+    return ' '.join(status)
+
 def main(xml_directory):
-    xml_directory = "pagexmls\page_export_job_9770194"
+    # Create an empty DataFrame
     df = pd.DataFrame(columns=['file_path', 'filename', 'text'])
     
+    # Get all XML files in the directory
     xml_files = get_all_xml_files(xml_directory)
+
+    # Extract the text and status from each XML file
     data = []
     files_to_remove = ["mets.xml", "metadata.xml"]
     for file_path in xml_files:
@@ -92,9 +118,12 @@ def main(xml_directory):
 
         # Extract the text
         extracted_text = extract_text_equivs(root, namespace)
+
+        # Extract the metadata status
+        metadata_status = extract_metadata_status(root, namespace)
         
         # append to list
-        data.append({'file_path': file_path, 'filename': os.path.basename(file_path), 'text': extracted_text})
+        data.append({'file_path': file_path, 'filename': os.path.basename(file_path), 'status':metadata_status, 'text': extracted_text})
     
     # convert list to dataframe
     df = pd.DataFrame(data)
@@ -103,11 +132,8 @@ def main(xml_directory):
 
 if __name__ == "__main__":
     # Example usage:
-    xml_parent_directory = r"C:\Users\B294422\Desktop\hackathon2024\pagexmls\page_export_job_9770194"
-    
+    xml_parent_directory = "pagexmls\page_export_job_9770194"
+
     df = main(xml_parent_directory)
 
     df.to_csv('./data/text_extraction_pagexmls.csv', index=False)
-
-
-        
