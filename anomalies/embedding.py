@@ -55,7 +55,7 @@ class EmbeddingRequester(object):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="handle kfp pipelines")
+    parser = argparse.ArgumentParser(description="generate embeddings from text dataframes")
     parser.add_argument("--max-lines", default="-1")
     parser.add_argument("--model", default="text-embedding-3-large")
     parser.add_argument("--input-path", default="data/pagexmls.csv")
