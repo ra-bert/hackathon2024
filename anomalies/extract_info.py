@@ -51,7 +51,7 @@ def load_xml_file(file_path):
         print(f"Error parsing XML: {e}")
         return None
 
-def extract_text_equivs(root, namespace):
+def extract_text_equivs(root, namespace, include_break_line=False):
     """
     Extracts the text equivalents from a parsed XML root.
     
@@ -62,17 +62,30 @@ def extract_text_equivs(root, namespace):
     Returns:
         str: Extracted text joined into a sentence.
     """
+    count_lines = 0
     if root is None or not namespace:
         return ""
     
     ns = {'ns': namespace}  # Namespace dict for searching
-    text_equivs = []
-    for word in root.findall('.//ns:Word', ns):
-        unicode_elem = word.find('.//ns:Unicode', ns)
-        if unicode_elem is not None:
-            text_equivs.append(unicode_elem.text)
-    
-    return ' '.join(text_equivs)
+  
+    text_lines = []
+    for text_line in root.findall('.//ns:TextLine', ns):
+        # Find the direct child TextEquiv of the TextLine (ignore Word elements)
+        text_equiv = text_line.find('./ns:TextEquiv/ns:Unicode', ns)
+        if text_equiv is not None and text_equiv.text is not None:
+            text_lines.append(text_equiv.text)
+
+    # join text line and add \n for each line
+    if text_lines and len(text_lines) > 1:
+            if include_break_line:
+                text_lines = '\n'.join(text_lines)
+            else:
+                # concatenate all text lines
+                text_lines = ' '.join(text_lines)
+    if not text_lines:
+        return ""
+
+    return text_lines
 
 def extract_metadata_status(root, namespace):
     """
@@ -97,7 +110,7 @@ def extract_metadata_status(root, namespace):
         
     return ' '.join(status)
 
-def main(xml_directory):
+def extract_info(xml_directory):
     # Create an empty DataFrame
     df = pd.DataFrame(columns=['file_path', 'filename', 'text'])
     
@@ -108,6 +121,7 @@ def main(xml_directory):
     data = []
     files_to_remove = ["mets.xml", "metadata.xml"]
     for file_path in xml_files:
+        #print(os.path.basename(file_path))
         if os.path.basename(file_path) in files_to_remove:
             continue
         # Load the XML
@@ -117,7 +131,7 @@ def main(xml_directory):
         namespace = get_namespace(root)
 
         # Extract the text
-        extracted_text = extract_text_equivs(root, namespace)
+        extracted_text = extract_text_equivs(root, namespace, include_break_line=True)
 
         # Extract the metadata status
         metadata_status = extract_metadata_status(root, namespace)
@@ -130,10 +144,39 @@ def main(xml_directory):
 
     return df
 
-if __name__ == "__main__":
-    # Example usage:
+# text into minimum of 50 words and include until next line break \n
+# insert it in a new row in the dataframe
+
+def split_into_chunks(df, word_len=100):
+    df_new = pd.DataFrame(columns=['file_path', 'filename', 'row_idx', 'status', 'text'])
+    chunks = []
+    for idx, row in df.iterrows():
+        text = row['text']
+        if len(text) > word_len:
+            text = text.split()
+            row_idx = 0
+            for i in range(0, len(text), word_len):
+                chunks.append({'file_path': row['file_path'], 'filename': row['filename'], 'row_idx': row_idx, 'status': row['status'], 'text': ' '.join(text[i:i+word_len])})
+                row_idx += 1
+        else:
+            chunks.append({'file_path': row['file_path'], 'filename': row['filename'], 'row_idx': 0, 'status': row['status'], 'text': text})
+    df_new = pd.DataFrame(chunks)
+    return df_new
+
+if __name__ == "__extract_info__":
+    # Rein deer dataset
     xml_parent_directory = "pagexmls\page_export_job_9770194"
 
-    df = main(xml_parent_directory)
-
+    df = extract_info(xml_parent_directory)
+    df_chunk = split_into_chunks(df)
     df.to_csv('./data/text_extraction_pagexmls.csv', index=False)
+    df_chunk.to_csv('./data/text_extraction_pagexmls_chunk.csv', index=False)
+    
+    # Swedish dataset
+    xml_parent_directory = "pagexmls\export_job_12164122"
+
+    df = extract_info(xml_parent_directory)
+    df_chunk = split_into_chunks(df)
+    
+    df.to_csv('./data/text_extraction_pagexmls_swedish.csv', index=False)
+    df_chunk.to_csv('./data/text_extraction_pagexmls_swedish_chunk.csv', index=False)
