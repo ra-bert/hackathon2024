@@ -4,3 +4,4 @@ numpy>=2.1.1
 pandas>=2.2.3
 pytest>=8.3.3
 mock>=5.0.0
+renumics-spotlight>=1.6.11
