@@ -49,6 +49,7 @@ class EmbeddingRequester(object):
         print(f"max lines {max_rows}")
         if max_rows and max_rows > 0:
             print("cropping")
+            df.sample(frac=1).reset_index(drop=True)
             df = df.head(max_rows)
         new_df = self.embed_df(df)
         new_df.to_csv(output_path, index=False)
