@@ -163,15 +163,15 @@ def split_into_chunks(df, word_len=100):
     df_new = pd.DataFrame(chunks)
     return df_new
 
-if __name__ == "__extract_info__":
+if __name__ == "__main__":
     # Rein deer dataset
     xml_parent_directory = "pagexmls\page_export_job_9770194"
 
     df = extract_info(xml_parent_directory)
     df_chunk = split_into_chunks(df)
     df.to_csv('./data/text_extraction_pagexmls.csv', index=False)
-    df_chunk.to_csv('./data/text_extraction_pagexmls_chunk.csv', index=False)
-    
+    df_chunk.to_csv('./data/text_extraction_pagexmls_chunk.csv', index=False, encoding='utf-8')
+
     # Swedish dataset
     xml_parent_directory = "pagexmls\export_job_12164122"
 
